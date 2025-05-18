@@ -6,6 +6,7 @@ from ttkbootstrap.constants import *
 from tkinter.messagebox import showerror
 from dotenv import load_dotenv
 import os
+from PIL import Image, ImageTk
 
 load_dotenv()
 
@@ -14,8 +15,7 @@ EXCHANGE_API_KEY = os.getenv("EXCHANGE_API_KEY")
 
 watchlist = []
 currency_mode = "USD"
-
-search_results_map = {}  # Maps title -> game ID
+search_results_map = {}
 
 def fetch_conversion_rate():
     try:
@@ -34,23 +34,37 @@ def convert_price(price_usd):
     else:
         return f"${round(price_usd, 2)}"
 
-# GUI setup
+# --- GUI setup ---
 app = tb.Window(themename="darkly")
 app.title("Game Tracker.io")
 app.geometry("1800x800")
 app.rowconfigure(2, weight=1)
-app.rowconfigure(5, weight=0)
 app.columnconfigure(0, weight=1)
 
-# --- Widgets ---
-
+# --- Top frame with logo, search bar and currency toggle ---
 top_frame = ttk.Frame(app)
 top_frame.grid(row=0, column=0, sticky="ew", padx=10, pady=5)
 top_frame.columnconfigure(1, weight=1)
 
-search_label = ttk.Label(top_frame, text="Game Title:")
-search_label.grid(row=0, column=0, sticky="w", padx=(0,5))
+# --- Logo ---
+try:
+    logo = Image.open("game_tracker_io.png")
+    logo = logo.resize((60, 60), Image.Resampling.LANCZOS)
+    logo_img = ImageTk.PhotoImage(logo)
+    logo_label = ttk.Label(top_frame, image=logo_img, cursor="hand2")
+    logo_label.grid(row=0, column=0, padx=(0, 10))
+except Exception as e:
+    logo_label = ttk.Label(top_frame, text="🎮", font=("Segoe UI", 20))
+    logo_label.grid(row=0, column=0, padx=(0, 10))
 
+def refresh_app():
+    search_entry.delete(0, tk.END)
+    results_box.delete(0, tk.END)
+    result_box.delete("1.0", tk.END)
+
+logo_label.bind("<Button-1>", lambda e: refresh_app())
+
+# --- Search ---
 search_entry = ttk.Entry(top_frame)
 search_entry.grid(row=0, column=1, sticky="ew")
 
@@ -61,35 +75,33 @@ currency_toggle_var = tk.BooleanVar()
 currency_toggle = ttk.Checkbutton(top_frame, text="EGP Mode", variable=currency_toggle_var, command=lambda: toggle_currency(), bootstyle="success-round-toggle")
 currency_toggle.grid(row=0, column=3, padx=5)
 
-# Results Label
+# --- Results Label ---
 results_label = ttk.Label(app, text="🔎 Search Results", font=("Segoe UI", 12, "bold"))
 results_label.grid(row=1, column=0, sticky="w", padx=10)
 
-# Main content area
+# --- Main content area ---
 content_frame = ttk.Frame(app)
 content_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=5)
-content_frame.rowconfigure(0, weight=1)
 content_frame.columnconfigure(0, weight=1)
 content_frame.columnconfigure(1, weight=2)
 
-# --- Results List with Scrollbar ---
 results_frame = ttk.Frame(content_frame)
 results_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 results_frame.rowconfigure(0, weight=1)
 results_frame.columnconfigure(0, weight=1)
 
-results_box = tk.Listbox(results_frame, height=10, font=("Segoe UI", 11))
+results_box = tk.Listbox(results_frame, font=("Segoe UI", 11))
 results_box.grid(row=0, column=0, sticky="nsew")
 
 results_scroll = ttk.Scrollbar(results_frame, orient="vertical", command=results_box.yview)
 results_scroll.grid(row=0, column=1, sticky="ns")
 results_box.config(yscrollcommand=results_scroll.set)
 
-# Price output box
+# --- Price Display Box ---
 result_box = tk.Text(content_frame, wrap=tk.WORD, font=("Segoe UI", 10))
 result_box.grid(row=0, column=1, sticky="nsew")
 
-# Buttons
+# --- Buttons ---
 button_frame = ttk.Frame(app)
 button_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=5)
 
@@ -99,7 +111,7 @@ price_btn.pack(side="left", padx=5)
 add_btn = ttk.Button(button_frame, text="⭐ Add to Watchlist", command=lambda: add_to_watchlist(), bootstyle="warning")
 add_btn.pack(side="left", padx=5)
 
-# Watchlist Label + Frame
+# --- Watchlist Label & Frame ---
 ttk.Label(app, text="🎯 Watchlist", font=("Segoe UI", 12, "bold")).grid(row=4, column=0, sticky="w", padx=10, pady=(10,0))
 watchlist_frame = ttk.Frame(app)
 watchlist_frame.grid(row=5, column=0, sticky="ew", padx=10, pady=5)
@@ -150,7 +162,6 @@ def search_game():
             showerror("Error", f"Search failed. ({response.status_code})")
     except Exception as e:
         showerror("Error", str(e))
-
 
 def check_price():
     result_box.delete("1.0", tk.END)
@@ -218,5 +229,5 @@ def toggle_currency():
     currency_mode = "EGP" if currency_toggle_var.get() else "USD"
     check_price()
 
-# Start app
+# --- Run App ---
 app.mainloop()

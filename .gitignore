@@ -13,7 +13,13 @@ env/
 # Ignore IDE/editor settings
 .vscode/
 .idea/
-
+game_tracker_io.ico
+game_tracker_io.png
+dist/
+build/
+games_price.spec
 # Ignore OS files
 .DS_Store
 Thumbs.db
+
+
