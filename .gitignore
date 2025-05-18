@@ -18,6 +18,7 @@ game_tracker_io.png
 dist/
 build/
 games_price.spec
+GameTracker.spec
 # Ignore OS files
 .DS_Store
 Thumbs.db
